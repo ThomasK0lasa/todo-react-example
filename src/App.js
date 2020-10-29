@@ -1,54 +1,82 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React from 'react';
 import './App.css';
-import List from './List';
-import Form from './Form';
+import AppForm from './AppForm';
+import AppList from './AppList';
+import axios from 'axios';
 
-function App() {
-  const [elements, setElements] = useState([]);
+class App extends React.Component {
+  APIurl = "http://localhost:3001/v1/elements/";
 
-  const getElements = () => {
-    axios.get(`http://localhost:3001/v1/elements/`)
-      .then(res => {
-        console.log(res.data);
-        setElements(res.data);
-      })
+  constructor(props) {
+    super(props);
+    this.state = { elements: '', canConnect: true}
   }
 
-  useEffect( getElements, []);
+  componentDidMount() {
+    this.getElements();
+  }
 
-  const addElement = (element) => {
-    axios.post(`http://localhost:3001/v1/elements/`, {element:element})
-      .then(res => {
-        getElements();
+  getElements = () => {
+    axios.get(this.APIurl)
+    .then(res => {
+      this.setState({
+        elements: res.data
+      })
     })
-  };
+    .catch(err => {
+      this.setState({
+        canConnect: false 
+      })
+    })
+  }
 
-  const updateElement = (index, element) => {
-    console.log(index);
-    console.log(element);
-    axios.put(`http://localhost:3001/v1/elements/`+index, {element:element})
-      .then(res => {
-        getElements();
+  addElement = (newtask) => {
+    axios.post(this.APIurl, { element: newtask }).then(res => {
+      if (res.status === 200) {
+        this.getElements();
+      } else {
+        console.error('addElement Error');
+      }
     })
-  };
-  
-  const removeElement = (index) => {
-    axios.delete(`http://localhost:3001/v1/elements/`+index)
-      .then(res => {
-        getElements();
-    })
-  };
+  }
 
-  return (
-    <div className="App">
-      <header className="App-header">
-        <h1>ToDo React</h1>
-      </header>
-      <Form addElement={addElement}/>
-      <List elements={elements} removeElement={removeElement} updateElement={updateElement}/>
-    </div>
-  );
+  updateElement = (index) => {
+    axios.put(this.APIurl + index).then( res => {
+      if (res.status === 204) {
+        this.getElements();
+      } else {
+        console.error('updateElement Error');
+      }
+    })
+  }
+
+  removeElement = (index) => {
+    axios.delete(this.APIurl + index).then(res => {
+      if (res.status === 204) {
+        this.getElements();
+      } else {
+        console.error('removeElement Error');
+      }
+    })
+  }
+
+  render() {
+    const canConnect = this.state.canConnect;
+    return (
+      <main className="app" >
+        <header className="app-header">
+          <h1>ToDo React</h1>
+        </header>
+        { canConnect
+          ? <React.Fragment>
+            <AppForm addElement={this.addElement} />
+            <AppList elements={this.state.elements} removeElement={this.removeElement} updateElement={this.updateElement} />
+          </React.Fragment>
+          : <p className="error">Error when trying to connect to DB. :(</p>
+        }
+      </main>
+    );
+  }
 }
 
 export default App;
