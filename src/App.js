@@ -9,7 +9,7 @@ class App extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state = { elements: '', canConnect: true}
+    this.state = { elements: '', canConnect: null}
   }
 
   componentDidMount() {
@@ -20,43 +20,55 @@ class App extends React.Component {
     axios.get(this.APIurl)
     .then(res => {
       this.setState({
-        elements: res.data
+        elements: res.data,
+        canConnect: true
       })
     })
     .catch(err => {
       this.setState({
         canConnect: false 
       })
+      console.error("Can't connect to db server")
+      throw(err);
     })
   }
 
   addElement = (newtask) => {
-    axios.post(this.APIurl, { element: newtask }).then(res => {
+    axios.post(this.APIurl, { element: newtask })
+    .then(res => {
       if (res.status === 200) {
         this.getElements();
-      } else {
-        console.error('addElement Error');
       }
+    })
+    .catch(err => {
+      console.error('addElement Error')
+      throw(err);
     })
   }
 
   updateElement = (index) => {
-    axios.put(this.APIurl + index).then( res => {
+    axios.put(this.APIurl + index)
+    .then( res => {
       if (res.status === 204) {
         this.getElements();
-      } else {
-        console.error('updateElement Error');
       }
+    })
+    .catch(err => {
+      console.error('updateElement Error')
+      throw(err);
     })
   }
 
   removeElement = (index) => {
-    axios.delete(this.APIurl + index).then(res => {
+    axios.delete(this.APIurl + index)
+    .then(res => {
       if (res.status === 204) {
         this.getElements();
-      } else {
-        console.error('removeElement Error');
       }
+    })
+    .catch(err => {
+      console.error('removeElement Error')
+      throw(err);
     })
   }
 
@@ -67,8 +79,9 @@ class App extends React.Component {
         <header className="app-header">
           <h1>ToDo React</h1>
         </header>
-        { canConnect
-          ? <React.Fragment>
+        { canConnect===null ?
+          <p>Loading...</p>
+          : canConnect===true ? <React.Fragment>
             <AppForm addElement={this.addElement} />
             <AppList elements={this.state.elements} removeElement={this.removeElement} updateElement={this.updateElement} />
           </React.Fragment>
